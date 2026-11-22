@@ -1,0 +1,55 @@
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: taskflow-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - taskflow_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: taskflow-api
+    restart: unless-stopped
+    environment:
+      PORT: ${PORT}
+      MONGO_URI: ${MONGO_URI_DOCKER}
+    ports:
+      - "3000:3000"
+    networks:
+      - taskflow_network
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: taskflow-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - taskflow_network
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:
+
+networks:
+  taskflow_network:
+    driver: bridge
