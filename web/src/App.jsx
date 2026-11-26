@@ -55,7 +55,8 @@ async function request(path, options = {}) {
     return data
   } catch (error) {
     throw new Error(
-      error.message || 'No fue posible conectar con el servidor'
+      error.message || 'No fue posible conectar con el servidor',
+      { cause: error }
     )
   }
 }
